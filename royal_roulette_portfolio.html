@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Roulette — Case Study · Danush Yadav</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-bright: #F0C040;
+  --gold-dim: rgba(201,168,76,0.25);
+  --ink: #0B0A08;
+  --felt: #0D1A0F;
+  --ivory: #F5F0E8;
+  --ivory-dim: rgba(245,240,232,0.55);
+  --red-chip: #A02020;
+  --green-felt: #1A3D20;
+  --text-body: #C8C0B0;
+  --card-bg: rgba(20,18,14,0.85);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--ink);
+  color: var(--ivory);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── Custom Cursor ── */
+.cursor {
+  width: 10px; height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform 0.1s, opacity 0.2s;
+  mix-blend-mode: difference;
+}
+.cursor-ring {
+  width: 36px; height: 36px;
+  border: 1px solid rgba(201,168,76,0.5);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: all 0.18s cubic-bezier(.25,.8,.25,1);
+}
+
+/* ── Noise Texture ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 48px;
+  background: linear-gradient(to bottom, rgba(11,10,8,0.95), transparent);
+}
+.nav-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; letter-spacing: 4px;
+  color: var(--gold);
+  text-decoration: none;
+}
+.nav-links {
+  display: flex; gap: 36px; list-style: none;
+}
+.nav-links a {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ivory-dim); text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--gold); }
+
+/* ── Hero ── */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(26,61,32,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 30%, rgba(100,50,0,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(15,10,5,0.8) 0%, transparent 60%),
+    linear-gradient(160deg, #0f0e0c 0%, #090808 100%);
+  z-index: 1;
+}
+
+/* Spinning roulette wheel bg */
+.hero-wheel-bg {
+  position: absolute;
+  right: -8vw; top: 50%;
+  transform: translateY(-50%);
+  width: 60vw; max-width: 780px; height: 60vw; max-height: 780px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.08);
+  background:
+    conic-gradient(
+      from 0deg,
+      #1e1a00 0deg, #8B1A1A 10deg, #1a1a1a 20deg, #1e1a00 30deg,
+      #8B1A1A 40deg, #1a1a1a 50deg, #1e1a00 60deg, #8B1A1A 70deg,
+      #1a1a1a 80deg, #1e1a00 90deg, #8B1A1A 100deg, #1a1a1a 110deg,
+      #1e1a00 120deg, #8B1A1A 130deg, #1a1a1a 140deg, #1e1a00 150deg,
+      #8B1A1A 160deg, #1a1a1a 170deg, #1e1a00 180deg, #8B1A1A 190deg,
+      #1a1a1a 200deg, #1e1a00 210deg, #8B1A1A 220deg, #1a1a1a 230deg,
+      #1e1a00 240deg, #8B1A1A 250deg, #1a1a1a 260deg, #1e1a00 270deg,
+      #8B1A1A 280deg, #1a1a1a 290deg, #1e1a00 300deg, #8B1A1A 310deg,
+      #1a1a1a 320deg, #1e1a00 330deg, #8B1A1A 340deg, #1a1a1a 350deg,
+      #1e1a00 360deg
+    );
+  animation: wheelSpin 60s linear infinite;
+  opacity: 0.18;
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, transparent 75%);
+}
+@keyframes wheelSpin { to { transform: translateY(-50%) rotate(360deg); } }
+
+.hero-wheel-ring {
+  position: absolute;
+  right: -8vw; top: 50%;
+  transform: translateY(-50%);
+  width: 60vw; max-width: 780px; height: 60vw; max-height: 780px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.12);
+  pointer-events: none;
+}
+.hero-wheel-ring::before {
+  content: '';
+  position: absolute; inset: 6%;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.08);
+}
+.hero-wheel-ring::after {
+  content: '';
+  position: absolute; inset: 18%;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.06);
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  padding: 0 48px;
+  max-width: 680px;
+}
+.hero-eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 14px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 40px; height: 1px;
+  background: var(--gold); display: block;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(56px, 8vw, 110px);
+  font-weight: 300; line-height: 0.92;
+  letter-spacing: -2px;
+  margin-bottom: 12px;
+}
+.hero-title em {
+  font-style: italic;
+  background: linear-gradient(135deg, #8B6914 0%, #C9A84C 35%, #F0C040 50%, #C9A84C 65%, #8B6914 100%);
+  background-size: 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 5s ease-in-out infinite;
+}
+@keyframes goldShimmer { 0%,100% { background-position: 0% center; } 50% { background-position: 100% center; } }
+
+.hero-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 300; font-style: italic;
+  color: var(--ivory-dim); margin-bottom: 36px; line-height: 1.5;
+}
+.hero-meta {
+  display: flex; gap: 32px;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(245,240,232,0.38);
+  border-top: 1px solid rgba(201,168,76,0.15);
+  padding-top: 28px; margin-top: 28px;
+}
+.hero-meta span strong {
+  display: block; color: var(--gold); font-weight: 500;
+  font-size: 13px; margin-bottom: 3px;
+}
+.hero-scroll {
+  position: absolute; bottom: 40px; left: 48px;
+  font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+  color: rgba(245,240,232,0.3);
+  display: flex; align-items: center; gap: 12px;
+  z-index: 2;
+}
+.hero-scroll::after {
+  content: '';
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, rgba(201,168,76,0.5), transparent);
+  display: block;
+}
+
+/* ── Section Layout ── */
+section {
+  position: relative; z-index: 1;
+  padding: 120px 48px;
+}
+.section-inner { max-width: 1100px; margin: 0 auto; }
+
+.section-label {
+  font-size: 9px; letter-spacing: 6px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.section-label::before {
+  content: attr(data-num);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px; color: rgba(201,168,76,0.4);
+}
+.section-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 5vw, 68px);
+  font-weight: 300; line-height: 1.05;
+  margin-bottom: 24px;
+}
+.section-heading em { font-style: italic; color: var(--gold); }
+
+/* ── Problem Statement ── */
+#problem {
+  background: var(--felt);
+  background: linear-gradient(180deg, #0B0A08 0%, #0D1408 50%, #0B0A08 100%);
+}
+.problem-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: start; margin-top: 60px;
+}
+.problem-statement {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px; font-weight: 300; line-height: 1.5;
+  color: var(--ivory-dim);
+}
+.problem-statement strong { color: var(--ivory); font-weight: 400; }
+.problem-pills {
+  display: flex; flex-direction: column; gap: 16px;
+  margin-top: 8px;
+}
+.pill {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 20px 22px;
+  background: rgba(201,168,76,0.04);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 4px;
+}
+.pill-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.pill-title { font-size: 13px; font-weight: 500; color: var(--gold); margin-bottom: 4px; letter-spacing: 1px; }
+.pill-desc { font-size: 13px; color: var(--text-body); line-height: 1.5; }
+
+/* ── User Persona ── */
+#personas { background: #0B0A08; }
+.persona-split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; margin-top: 60px;
+}
+.persona-card {
+  position: relative; padding: 40px;
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 2px; overflow: hidden;
+  background: linear-gradient(145deg, rgba(201,168,76,0.04), rgba(0,0,0,0.6));
+  transition: border-color 0.4s;
+}
+.persona-card:hover { border-color: rgba(201,168,76,0.4); }
+.persona-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0; transition: opacity 0.4s;
+}
+.persona-card:hover::before { opacity: 1; }
+.persona-tag {
+  font-size: 9px; letter-spacing: 5px; text-transform: uppercase;
+  color: rgba(201,168,76,0.5); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.persona-tag::before {
+  content: '';
+  width: 20px; height: 1px; background: var(--gold-dim); display: block;
+}
+.persona-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px; font-weight: 300; line-height: 1;
+  margin-bottom: 6px;
+}
+.persona-role {
+  font-size: 12px; letter-spacing: 2px; color: var(--gold);
+  margin-bottom: 28px; text-transform: uppercase;
+}
+.persona-needs {
+  list-style: none; display: flex; flex-direction: column; gap: 10px;
+  font-size: 14px; color: var(--text-body); line-height: 1.5;
+  border-top: 1px solid rgba(201,168,76,0.1); padding-top: 24px;
+}
+.persona-needs li {
+  padding-left: 16px; position: relative;
+}
+.persona-needs li::before {
+  content: '▸';
+  position: absolute; left: 0;
+  color: var(--gold); font-size: 10px;
+}
+
+/* ── User Flow ── */
+#flow { background: linear-gradient(180deg, #0B0A08, #0D1408 50%, #0B0A08); }
+.flow-diagram {
+  margin-top: 60px;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.flow-row {
+  display: flex; align-items: center; gap: 0;
+  justify-content: center;
+}
+.flow-node {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 28px;
+  background: var(--card-bg);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 2px;
+  text-align: center; min-width: 140px;
+  position: relative; transition: all 0.3s;
+}
+.flow-node:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 30px rgba(201,168,76,0.1);
+}
+.flow-node.start {
+  background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(0,0,0,0.7));
+  border-color: rgba(201,168,76,0.4);
+}
+.flow-node.end {
+  background: linear-gradient(135deg, rgba(26,61,32,0.4), rgba(0,0,0,0.7));
+  border-color: rgba(40,180,70,0.3);
+}
+.flow-icon { font-size: 24px; margin-bottom: 8px; }
+.flow-label {
+  font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
+  color: var(--ivory); text-transform: uppercase;
+}
+.flow-sub { font-size: 10px; color: var(--text-body); margin-top: 3px; }
+.flow-arrow-h {
+  width: 60px; height: 1px;
+  background: linear-gradient(90deg, rgba(201,168,76,0.3), rgba(201,168,76,0.6), rgba(201,168,76,0.3));
+  position: relative; flex-shrink: 0;
+}
+.flow-arrow-h::after {
+  content: '▸';
+  position: absolute; right: -8px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold); font-size: 10px;
+}
+.flow-arrow-v {
+  width: 1px; height: 40px;
+  background: linear-gradient(180deg, rgba(201,168,76,0.4), rgba(201,168,76,0.15));
+  position: relative; margin: 0 auto;
+}
+.flow-arrow-v::after {
+  content: '▾';
+  position: absolute; bottom: -10px; left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold); font-size: 10px;
+}
+.flow-split {
+  display: flex; gap: 24px; justify-content: center;
+  width: 100%;
+}
+.flow-branch {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+
+/* ── Wireframes ── */
+#wireframes { background: #0B0A08; }
+.wireframe-progression {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 40px; align-items: center; margin-top: 60px;
+}
+.wf-stage { position: relative; }
+.wf-label {
+  font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.wf-screen {
+  width: 100%; aspect-ratio: 9/16; max-width: 220px; margin: 0 auto;
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 18px; overflow: hidden;
+  position: relative;
+  background: #111;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 6px rgba(201,168,76,0.04);
+}
+.wf-screen.lofi {
+  background: #1a1a1a;
+}
+.wf-lofi-content {
+  padding: 20px 14px;
+  display: flex; flex-direction: column; gap: 10px; height: 100%;
+}
+.wf-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+.wf-box.header { height: 50px; }
+.wf-box.wheel { height: 160px; border-radius: 50%; margin: 8px auto; width: 140px; border-style: solid; background: rgba(255,255,255,0.03); }
+.wf-box.chips { height: 36px; border-radius: 20px; }
+.wf-box.board { flex: 1; }
+.wf-box.btn { height: 42px; border-radius: 8px; background: rgba(255,255,255,0.08); }
+.wf-hifi-content {
+  width: 100%; height: 100%;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(26,61,32,0.5) 0%, transparent 60%),
+    linear-gradient(180deg, #030a05 0%, #000 100%);
+  padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.wf-hifi-header {
+  text-align: center; padding: 8px;
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--gold); font-size: 11px; letter-spacing: 2px;
+}
+.wf-hifi-wheel {
+  width: 110px; height: 110px; border-radius: 50%;
+  margin: 0 auto;
+  background: conic-gradient(
+    #1e1a00 0deg, #8B1A1A 10deg, #1a1a1a 20deg, #1e1a00 30deg,
+    #8B1A1A 40deg, #1a1a1a 50deg, #1e1a00 60deg, #8B1A1A 70deg,
+    #1a1a1a 80deg, #1e1a00 90deg, #8B1A1A 100deg, #1a1a1a 110deg,
+    #1e1a00 120deg, #8B1A1A 130deg, #1a1a1a 140deg, #1e1a00 150deg,
+    #8B1A1A 160deg, #1a1a1a 170deg, #1e1a00 180deg, #8B1A1A 190deg,
+    #1a1a1a 200deg, #1e1a00 210deg, #8B1A1A 220deg, #1a1a1a 230deg,
+    #1e1a00 240deg, #8B1A1A 250deg, #1a1a1a 260deg, #1e1a00 270deg,
+    #8B1A1A 280deg, #1a1a1a 290deg, #1e1a00 300deg, #8B1A1A 310deg,
+    #1a1a1a 320deg, #1e1a00 330deg, #8B1A1A 340deg, #1a1a1a 350deg, #1e1a00 360deg
+  );
+  border: 2px solid rgba(201,168,76,0.5);
+  box-shadow: 0 0 20px rgba(201,168,76,0.2);
+}
+.wf-hifi-chips {
+  display: flex; gap: 6px; justify-content: center;
+}
+.chip-mini {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; font-weight: 700;
+}
+.chip-mini.r { background: #7a1515; border-color: rgba(255,100,100,0.4); color: #fff; }
+.chip-mini.b { background: #152a7a; border-color: rgba(100,150,255,0.4); color: #fff; }
+.chip-mini.g { background: #1a5a1a; border-color: rgba(100,200,100,0.4); color: #fff; }
+.chip-mini.p { background: #5a1a7a; border-color: rgba(200,100,255,0.4); color: #fff; }
+.chip-mini.o { background: #7a4a10; border-color: rgba(255,180,50,0.4); color: #fff; }
+.wf-hifi-board {
+  flex: 1;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;
+  padding: 6px;
+  background: rgba(26,61,32,0.4);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 4px;
+}
+.board-cell {
+  aspect-ratio: 1; border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 6px; font-weight: 700;
+}
+.board-cell.r { background: #5a1010; color: #f88; }
+.board-cell.b { background: #101010; color: #aaa; }
+.board-cell.g { background: #0a2a0a; color: #4d4; }
+
+.wf-arrow {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--gold); font-size: 24px;
+}
+.wf-arrow span {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-body);
+}
+
+/* ── Design System ── */
+#design { background: linear-gradient(180deg, #0B0A08, #0d0c0a); }
+.design-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+.ds-card {
+  padding: 36px;
+  border: 1px solid rgba(201,168,76,0.1);
+  background: rgba(20,18,14,0.6);
+  border-radius: 2px;
+}
+.ds-card-title {
+  font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 28px;
+}
+
+/* Typography */
+.type-demo { display: flex; flex-direction: column; gap: 18px; }
+.type-row { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 16px; }
+.type-spec { font-size: 9px; letter-spacing: 2px; color: rgba(201,168,76,0.5); margin-bottom: 6px; text-transform: uppercase; }
+.type-sample-display {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 300;
+  background: linear-gradient(135deg, #8B6914, #F0C040, #8B6914);
+  background-size: 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 5s ease-in-out infinite;
+}
+.type-sample-body { font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text-body); }
+.type-sample-ui { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 4px; color: var(--ivory); }
+
+/* Color Palette */
+.palette { display: flex; flex-direction: column; gap: 12px; }
+.swatch-row { display: flex; gap: 10px; align-items: center; }
+.swatch {
+  width: 48px; height: 48px; border-radius: 4px;
+  flex-shrink: 0; border: 1px solid rgba(255,255,255,0.06);
+}
+.swatch-info { font-size: 12px; }
+.swatch-name { color: var(--ivory); font-weight: 500; margin-bottom: 2px; }
+.swatch-why { font-size: 11px; color: var(--text-body); line-height: 1.4; }
+
+/* Components */
+.component-showcase { display: flex; flex-direction: column; gap: 24px; }
+.comp-group-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-body); margin-bottom: 12px; }
+.btn-states { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.demo-btn {
+  padding: 12px 24px; border: none; border-radius: 3px;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  transition: all 0.25s;
+}
+.demo-btn.idle { background: linear-gradient(135deg, #9a7a30, var(--gold)); color: #000; }
+.demo-btn.ghost { background: transparent; border: 1px solid rgba(201,168,76,0.4); color: var(--gold); }
+.demo-btn.ghost:hover { background: rgba(201,168,76,0.08); }
+.demo-btn.disabled { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.2); cursor: not-allowed; }
+.chip-showcase { display: flex; gap: 14px; align-items: center; }
+.demo-chip {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 4px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+  position: relative;
+}
+.demo-chip::after {
+  content: '';
+  position: absolute; inset: 3px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.15);
+}
+.demo-chip.r1k { background: radial-gradient(circle at 35% 35%, #c0392b, #7a1515); border-color: rgba(255,120,120,0.4); color: #fff; box-shadow: 0 4px 15px rgba(192,57,43,0.5); }
+.demo-chip.b5k { background: radial-gradient(circle at 35% 35%, #1a4a9a, #0a1a5a); border-color: rgba(100,150,255,0.4); color: #fff; box-shadow: 0 4px 15px rgba(30,90,180,0.5); }
+.demo-chip.g500 { background: radial-gradient(circle at 35% 35%, #1a7a1a, #0a3a0a); border-color: rgba(100,200,100,0.4); color: #fff; box-shadow: 0 4px 15px rgba(30,150,50,0.5); }
+.demo-chip.s { transform: scale(1.18); box-shadow: 0 0 0 3px rgba(240,192,64,0.6) !important; }
+.chip-label { font-size: 9px; letter-spacing: 2px; color: var(--text-body); text-align: center; margin-top: 4px; }
+.chip-wrap { display: flex; flex-direction: column; align-items: center; }
+
+/* ── Outcome Metrics ── */
+#outcomes { background: #0B0A08; }
+.metrics-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 2px; overflow: hidden;
+  margin: 60px 0;
+}
+.metric {
+  padding: 48px 32px;
+  background: #0B0A08;
+  text-align: center;
+  transition: background 0.3s;
+}
+.metric:hover { background: rgba(201,168,76,0.03); }
+.metric-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 64px; line-height: 1; letter-spacing: 2px;
+  color: var(--gold); display: block;
+}
+.metric-unit { font-size: 13px; color: var(--gold); font-weight: 500; }
+.metric-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-body); margin-top: 8px; }
+.tech-stack {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.tech-item {
+  padding: 20px 24px;
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 2px; background: rgba(201,168,76,0.02);
+  transition: all 0.3s;
+}
+.tech-item:hover { border-color: rgba(201,168,76,0.3); }
+.tech-icon { font-size: 22px; margin-bottom: 8px; }
+.tech-name { font-size: 13px; font-weight: 500; color: var(--ivory); margin-bottom: 4px; }
+.tech-desc { font-size: 12px; color: var(--text-body); }
+
+/* ── Learnings ── */
+#learnings { background: linear-gradient(180deg, #0B0A08, #0d0c0a); }
+.learnings-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-top: 60px;
+}
+.learning-card {
+  padding: 32px;
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 2px;
+  background: rgba(201,168,76,0.02);
+  transition: all 0.35s;
+  position: relative; overflow: hidden;
+}
+.learning-card::before {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  transform: scaleX(0); transition: transform 0.4s;
+}
+.learning-card:hover::before { transform: scaleX(1); }
+.learning-card:hover { border-color: rgba(201,168,76,0.25); }
+.learning-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px; line-height: 1; color: rgba(201,168,76,0.12);
+  margin-bottom: 12px; letter-spacing: 2px;
+}
+.learning-title { font-size: 15px; font-weight: 500; color: var(--ivory); margin-bottom: 10px; }
+.learning-body { font-size: 13px; color: var(--text-body); line-height: 1.6; }
+
+/* ── Footer CTA ── */
+#cta {
+  background: linear-gradient(135deg, rgba(26,61,32,0.2) 0%, rgba(11,10,8,1) 50%, rgba(100,50,0,0.15) 100%);
+  text-align: center; padding: 140px 48px;
+  border-top: 1px solid rgba(201,168,76,0.1);
+}
+.cta-eyebrow {
+  font-size: 9px; letter-spacing: 6px; text-transform: uppercase;
+  color: rgba(201,168,76,0.5); margin-bottom: 24px;
+}
+.cta-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(40px, 6vw, 80px); font-weight: 300;
+  margin-bottom: 18px; line-height: 1;
+}
+.cta-heading em { font-style: italic; color: var(--gold); }
+.cta-sub { font-size: 16px; color: var(--text-body); margin-bottom: 48px; }
+.cta-buttons { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.cta-btn {
+  padding: 16px 36px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 3px; text-transform: uppercase;
+  text-decoration: none; border-radius: 2px;
+  transition: all 0.3s; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.cta-btn.primary {
+  background: linear-gradient(135deg, #9a7a30, var(--gold), #9a7a30);
+  background-size: 200%;
+  color: #000;
+  border: none;
+  animation: goldShimmer 4s ease-in-out infinite;
+  box-shadow: 0 8px 32px rgba(201,168,76,0.3);
+}
+.cta-btn.primary:hover { box-shadow: 0 12px 44px rgba(201,168,76,0.5); transform: translateY(-2px); }
+.cta-btn.secondary {
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+}
+.cta-btn.secondary:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+.footer-credits {
+  margin-top: 80px; padding-top: 40px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: rgba(255,255,255,0.2);
+  letter-spacing: 2px;
+}
+
+/* ── Scroll animations ── */
+.reveal {
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(.25,.8,.25,1), transform 0.8s cubic-bezier(.25,.8,.25,1);
+}
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ── Divider ── */
+.ornament-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 0 0 20px;
+  opacity: 0.35;
+}
+.ornament-divider::before, .ornament-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.ornament-divider span { color: var(--gold); font-size: 14px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+  section { padding: 80px 20px; }
+  .hero-content { padding: 0 20px; }
+  .hero-wheel-bg, .hero-wheel-ring { display: none; }
+  .problem-grid, .persona-split, .design-grid, .wireframe-progression { grid-template-columns: 1fr; gap: 32px; }
+  .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  .tech-stack, .learnings-grid { grid-template-columns: 1fr; }
+  .flow-row { flex-direction: column; }
+  .flow-arrow-h { width: 1px; height: 40px; transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Nav -->
+<nav>
+  <a href="#" class="nav-brand">DANUSH YADAV</a>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#personas">UX</a></li>
+    <li><a href="#wireframes">Design</a></li>
+    <li><a href="#outcomes">Outcomes</a></li>
+    <li><a href="#cta">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="top">
+  <div class="hero-wheel-bg"></div>
+  <div class="hero-wheel-ring"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Case Study · UI/UX Design & Development</div>
+    <h1 class="hero-title">
+      Royal<br><em>Roulette</em>
+    </h1>
+    <p class="hero-subtitle">
+      A real-time multiplayer casino platform — designed from wire to wheel.
+    </p>
+    <div class="hero-meta">
+      <span><strong>March – May 2026</strong>Timeline</span>
+      <span><strong>3 Months</strong>Duration</span>
+      <span><strong>Figma + VS Code</strong>Tools</span>
+      <span><strong>Lead Designer</strong>Role</span>
+    </div>
+  </div>
+
+  <div class="hero-scroll">Scroll to explore</div>
+</section>
+
+<!-- Problem -->
+<section id="problem">
+  <div class="section-inner">
+    <div class="section-label" data-num="01">The Problem</div>
+    <h2 class="section-heading reveal">Casino interfaces are <em>broken</em><br>for the modern web.</h2>
+
+    <div class="problem-grid">
+      <div class="problem-statement reveal reveal-delay-1">
+        Casino and betting interfaces are notoriously <strong>cluttered</strong>, overwhelming for beginners, and rarely adapt smoothly across mobile and desktop in <strong>real time</strong>.
+        <br><br>
+        <em style="font-size:22px;color:var(--ivory-dim);">The challenge: design a platform that feels luxurious, readable, and functional — simultaneously for the host running the table and the player placing bets.</em>
+      </div>
+      <div class="problem-pills reveal reveal-delay-2">
+        <div class="pill">
+          <div class="pill-icon">📱</div>
+          <div>
+            <div class="pill-title">Responsive Chaos</div>
+            <div class="pill-desc">Roulette boards collapse on vertical mobile screens. Chip click targets become impossible to hit accurately.</div>
+          </div>
+        </div>
+        <div class="pill">
+          <div class="pill-icon">🧠</div>
+          <div>
+            <div class="pill-title">Cognitive Overload</div>
+            <div class="pill-desc">Existing casino UIs bombard beginners with too much data at once — balance, round history, live chat, and betting controls fighting for attention.</div>
+          </div>
+        </div>
+        <div class="pill">
+          <div class="pill-icon">⚡</div>
+          <div>
+            <div class="pill-title">Latency Disconnect</div>
+            <div class="pill-desc">Real-time sync between host wheel spin and player bet locks needed near-instant UI feedback to feel trustworthy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Personas -->
+<section id="personas">
+  <div class="section-inner">
+    <div class="ornament-divider"><span>◆</span></div>
+    <div class="section-label" data-num="02">User Architecture</div>
+    <h2 class="section-heading reveal">Two users. <em>Two worlds.</em><br>One platform.</h2>
+
+    <div class="persona-split">
+      <div class="persona-card reveal reveal-delay-1">
+        <div class="persona-tag">User Type A</div>
+        <div class="persona-name">The Host</div>
+        <div class="persona-role">Table Administrator</div>
+        <ul class="persona-needs">
+          <li>Needs full game control — create table, set limits, start spins</li>
+          <li>Requires live view of all connected players and their bets</li>
+          <li>Needs automatic payout calculations after each round</li>
+          <li>Must be able to manage chips and track chip balances per player</li>
+          <li>Demands a clean admin dashboard — no clutter, high clarity</li>
+          <li>Needs session codes to share with players for joining</li>
+        </ul>
+      </div>
+      <div class="persona-card reveal reveal-delay-2">
+        <div class="persona-tag">User Type B</div>
+        <div class="persona-name">The Player</div>
+        <div class="persona-role">Active Bettor</div>
+        <ul class="persona-needs">
+          <li>Joins via a session code — no account or login required</li>
+          <li>Needs distraction-free betting: chip selection → board placement</li>
+          <li>Must clearly see their balance and current round bets at all times</li>
+          <li>Requires visual feedback: wheel animation, win/loss result states</li>
+          <li>On mobile: one-thumb operation must be fully viable</li>
+          <li>Needs clear bet lock indicator when host has initiated spin</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- User Flow -->
+<section id="flow">
+  <div class="section-inner">
+    <div class="section-label" data-num="03">User Flow</div>
+    <h2 class="section-heading reveal">From lobby entry<br>to <em>payout.</em></h2>
+
+    <div class="flow-diagram reveal">
+      <div class="flow-split">
+        <div class="flow-branch">
+          <div class="flow-node start">
+            <div class="flow-icon">👑</div>
+            <div class="flow-label">Host</div>
+            <div class="flow-sub">Creates Table</div>
+          </div>
+          <div class="flow-arrow-v"></div>
+          <div class="flow-node">
+            <div class="flow-icon">⚙️</div>
+            <div class="flow-label">Set Config</div>
+            <div class="flow-sub">Limits & Theme</div>
+          </div>
+          <div class="flow-arrow-v"></div>
+          <div class="flow-node">
+            <div class="flow-icon">🔑</div>
+            <div class="flow-label">Share Code</div>
+            <div class="flow-sub">P2P Session Key</div>
+          </div>
+        </div>
+        <div style="width:80px;display:flex;align-items:center;justify-content:center;padding-top:120px;">
+          <div style="height:1px;width:100%;background:linear-gradient(90deg,rgba(201,168,76,0.2),rgba(201,168,76,0.5),rgba(201,168,76,0.2));position:relative;">
+            <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0B0A08;padding:0 10px;color:rgba(201,168,76,0.5);font-size:10px;letter-spacing:2px;white-space:nowrap;">PEER · 2 · PEER</span>
+          </div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-node start">
+            <div class="flow-icon">🃏</div>
+            <div class="flow-label">Player</div>
+            <div class="flow-sub">Enters Code</div>
+          </div>
+          <div class="flow-arrow-v"></div>
+          <div class="flow-node">
+            <div class="flow-icon">💰</div>
+            <div class="flow-label">Buy Chips</div>
+            <div class="flow-sub">Select Denomination</div>
+          </div>
+          <div class="flow-arrow-v"></div>
+          <div class="flow-node">
+            <div class="flow-icon">🎡</div>
+            <div class="flow-label">Join Lobby</div>
+            <div class="flow-sub">Live Table View</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow-v" style="height:50px;margin-top:0;"></div>
+
+      <div class="flow-row">
+        <div class="flow-node">
+          <div class="flow-icon">🪙</div>
+          <div class="flow-label">Place Bets</div>
+          <div class="flow-sub">Board Zones</div>
+        </div>
+        <div class="flow-arrow-h"></div>
+        <div class="flow-node">
+          <div class="flow-icon">🔒</div>
+          <div class="flow-label">Bets Locked</div>
+          <div class="flow-sub">Host Initiates</div>
+        </div>
+        <div class="flow-arrow-h"></div>
+        <div class="flow-node">
+          <div class="flow-icon">🎰</div>
+          <div class="flow-label">Wheel Spins</div>
+          <div class="flow-sub">Live Animation</div>
+        </div>
+        <div class="flow-arrow-h"></div>
+        <div class="flow-node end">
+          <div class="flow-icon">🏆</div>
+          <div class="flow-label">Result</div>
+          <div class="flow-sub">Auto Payout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Wireframes -->
+<section id="wireframes">
+  <div class="section-inner">
+    <div class="ornament-divider"><span>◆</span></div>
+    <div class="section-label" data-num="04">Design Progression</div>
+    <h2 class="section-heading reveal">Lofi to hifi — <em>intentional</em><br>at every step.</h2>
+
+    <div class="wireframe-progression">
+      <div class="wf-stage reveal reveal-delay-1">
+        <div class="wf-label">Phase 1 · Low-Fidelity</div>
+        <div class="wf-screen lofi">
+          <div class="wf-lofi-content">
+            <div class="wf-box header"></div>
+            <div class="wf-box wheel"></div>
+            <div class="wf-box chips"></div>
+            <div class="wf-box board"></div>
+            <div class="wf-box btn"></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-body);margin-top:16px;line-height:1.5;max-width:220px;margin-left:auto;margin-right:auto;">
+          Structure first. Blocked-out zones to test hierarchy: header → wheel → chip bar → betting board → action button.
+        </p>
+      </div>
+
+      <div class="wf-arrow reveal">
+        <span>→</span>
+        <span>Refine</span>
+      </div>
+
+      <div class="wf-stage reveal reveal-delay-2">
+        <div class="wf-label">Phase 2 · High-Fidelity</div>
+        <div class="wf-screen">
+          <div class="wf-hifi-content">
+            <div class="wf-hifi-header">♛ ROYAL ROULETTE</div>
+            <div class="wf-hifi-wheel"></div>
+            <div class="wf-hifi-chips">
+              <div class="chip-wrap"><div class="demo-chip r1k">1K</div></div>
+              <div class="chip-wrap"><div class="demo-chip b5k">5K</div></div>
+              <div class="chip-wrap"><div class="demo-chip g500 s">500</div></div>
+              <div class="chip-wrap"><div class="demo-chip" style="background:radial-gradient(circle at 35% 35%,#7a1a7a,#3a0a3a);border-color:rgba(200,100,255,0.4);color:#fff;box-shadow:0 4px 15px rgba(120,30,180,0.5);">2K</div></div>
+            </div>
+            <div class="wf-hifi-board">
+              <div class="board-cell g" style="grid-column:1/2;font-size:5px;font-weight:900;">0</div>
+              <div style="grid-column:2/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;">
+                <div class="board-cell r">1</div><div class="board-cell b">2</div><div class="board-cell r">3</div><div class="board-cell b">4</div><div class="board-cell r">5</div>
+                <div class="board-cell b">6</div><div class="board-cell r">7</div><div class="board-cell b">8</div><div class="board-cell r">9</div><div class="board-cell b">10</div>
+                <div class="board-cell r">11</div><div class="board-cell b">12</div><div class="board-cell r">13</div><div class="board-cell b">14</div><div class="board-cell r">15</div>
+                <div class="board-cell b">16</div><div class="board-cell r">17</div><div class="board-cell b">18</div><div class="board-cell r">19</div><div class="board-cell b">20</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-body);margin-top:16px;line-height:1.5;max-width:220px;margin-left:auto;margin-right:auto;">
+          Luxury casino floor aesthetic — deep dark tones, gold accents, Cinzel typeface. Chip states with active ring glow.
+        </p>
+      </div>
+    </div>
+
+    <!-- Design Decision callout -->
+    <div style="margin-top:60px;padding:40px;border:1px solid rgba(201,168,76,0.15);border-radius:2px;background:rgba(201,168,76,0.02);" class="reveal">
+      <div style="font-size:10px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">Design Decision · Mobile Layout</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ivory);margin-bottom:12px;">The Vertical Screen Problem</div>
+          <p style="font-size:14px;color:var(--text-body);line-height:1.6;">
+            On a vertical mobile screen, a traditional roulette board is too wide and the numbers too small to tap accurately. The solution: stack the wheel above a scrollable number grid, and anchor the chip selector as a fixed bottom strip — eliminating accidental mis-taps through spatial separation.
+          </p>
+        </div>
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ivory);margin-bottom:12px;">Desktop Horizontal Mode</div>
+          <p style="font-size:14px;color:var(--text-body);line-height:1.6;">
+            On desktop, the wheel moves left alongside the board in a split-panel layout. The chip bar becomes a sidebar column. Both modes share the same component tree — only the CSS grid breakpoints shift, ensuring zero logic duplication between builds.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Design System -->
+<section id="design">
+  <div class="section-inner">
+    <div class="section-label" data-num="05">Design System</div>
+    <h2 class="section-heading reveal">Typography, color,<br><em>psychology.</em></h2>
+
+    <div class="design-grid">
+      <!-- Typography -->
+      <div class="ds-card reveal reveal-delay-1">
+        <div class="ds-card-title">Typography System</div>
+        <div class="type-demo">
+          <div class="type-row">
+            <div class="type-spec">Display · Cinzel Decorative</div>
+            <div class="type-sample-display">Royal Roulette</div>
+            <div style="font-size:11px;color:var(--text-body);margin-top:6px;">Used for logo, titles, session codes. Serif drama signals luxury and gravitas.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-spec">UI · Bebas Neue / Rajdhani</div>
+            <div class="type-sample-ui">PLACE YOUR BET</div>
+            <div style="font-size:11px;color:var(--text-body);margin-top:6px;">All-caps condensed for high-speed scanning under pressure. Zero ambiguity.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-spec">Body · DM Sans</div>
+            <div class="type-sample-body">Chip balance: ₹12,500 — Round 7 of 10</div>
+            <div style="font-size:11px;color:var(--text-body);margin-top:6px;">Clean and neutral for data labels, balance displays, and status messages.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color Palette -->
+      <div class="ds-card reveal reveal-delay-2">
+        <div class="ds-card-title">Color Psychology</div>
+        <div class="palette">
+          <div class="swatch-row">
+            <div class="swatch" style="background:#0B0A08;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Casino Noir #0B0A08</div>
+              <div class="swatch-why">Near-black with warm undertone. Mimics the velvet of a real casino floor. Reduces eye strain during extended sessions.</div>
+            </div>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:linear-gradient(135deg,#8B6914,#C9A84C,#F0C040);"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Sovereign Gold #C9A84C</div>
+              <div class="swatch-why">Warm gold over cool yellow. All action-critical elements (CTA buttons, selected states, win indicators) use this — trained recognition in 2 seconds.</div>
+            </div>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#1A3D20;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Casino Felt #1A3D20</div>
+              <div class="swatch-why">Deep green for the betting board. Universally recognizable as the roulette surface — instant context without onboarding.</div>
+            </div>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#A02020;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Rouge #A02020</div>
+              <div class="swatch-why">Muted red — not alarm-red. Used for red number cells and the highest-value chip. Communicates risk without panic.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Component States -->
+      <div class="ds-card reveal reveal-delay-1" style="grid-column:1/-1;">
+        <div class="ds-card-title">Component Library · States</div>
+        <div class="component-showcase">
+          <div>
+            <div class="comp-group-title">Button States</div>
+            <div class="btn-states">
+              <div>
+                <div class="demo-btn idle">Place Bet</div>
+                <div style="font-size:9px;color:var(--text-body);margin-top:6px;letter-spacing:1px;text-align:center;">Idle</div>
+              </div>
+              <div>
+                <div class="demo-btn ghost">Clear Chips</div>
+                <div style="font-size:9px;color:var(--text-body);margin-top:6px;letter-spacing:1px;text-align:center;">Secondary</div>
+              </div>
+              <div>
+                <div class="demo-btn disabled" disabled>Spin Locked</div>
+                <div style="font-size:9px;color:var(--text-body);margin-top:6px;letter-spacing:1px;text-align:center;">Disabled</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="comp-group-title">Chip States · Click = Selected</div>
+            <div class="chip-showcase" id="chipShowcase">
+              <div class="chip-wrap" onclick="selectChip(this)">
+                <div class="demo-chip r1k" id="chip1k">1K</div>
+                <div class="chip-label">₹1,000</div>
+              </div>
+              <div class="chip-wrap" onclick="selectChip(this)">
+                <div class="demo-chip b5k" id="chip5k">5K</div>
+                <div class="chip-label">₹5,000</div>
+              </div>
+              <div class="chip-wrap" onclick="selectChip(this)">
+                <div class="demo-chip g500" id="chip500">500</div>
+                <div class="chip-label">₹500</div>
+              </div>
+              <div class="chip-wrap" onclick="selectChip(this)">
+                <div class="demo-chip" style="background:radial-gradient(circle at 35% 35%,#7a1a7a,#3a0a3a);border-color:rgba(200,100,255,0.4);color:#fff;box-shadow:0 4px 15px rgba(120,30,180,0.5);">2K</div>
+                <div class="chip-label">₹2,000</div>
+              </div>
+              <div class="chip-wrap" onclick="selectChip(this)">
+                <div class="demo-chip" style="background:radial-gradient(circle at 35% 35%,#7a6010,#3a2a00);border-color:rgba(255,200,50,0.5);color:#ffe;box-shadow:0 4px 15px rgba(200,160,30,0.5);">10K</div>
+                <div class="chip-label">₹10,000</div>
+              </div>
+              <div style="font-size:11px;color:var(--text-body);margin-left:16px;max-width:160px;line-height:1.5;">← Click any chip to see the selected state with gold ring indicator</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Outcomes -->
+<section id="outcomes">
+  <div class="section-inner">
+    <div class="ornament-divider"><span>◆</span></div>
+    <div class="section-label" data-num="06">Outcomes & Tech</div>
+    <h2 class="section-heading reveal">Shipped in <em>3 months.</em><br>Zero dependencies.</h2>
+
+    <div class="metrics-row">
+      <div class="metric reveal">
+        <span class="metric-num">2</span>
+        <div class="metric-label">Distinct User Modes<br>Designed & Built</div>
+      </div>
+      <div class="metric reveal reveal-delay-1">
+        <span class="metric-num">100<span class="metric-unit">%</span></span>
+        <div class="metric-label">Custom Coded<br>No Frameworks</div>
+      </div>
+      <div class="metric reveal reveal-delay-2">
+        <span class="metric-num">P2P</span>
+        <div class="metric-label">Real-Time Sync<br>Via PeerJS</div>
+      </div>
+      <div class="metric reveal reveal-delay-3">
+        <span class="metric-num">∞</span>
+        <div class="metric-label">Simultaneous<br>Players Supported</div>
+      </div>
+    </div>
+
+    <div class="tech-stack">
+      <div class="tech-item reveal">
+        <div class="tech-icon">🎨</div>
+        <div class="tech-name">HTML5 + CSS3</div>
+        <div class="tech-desc">Pure CSS animations for wheel spin, chip selections, and result state transitions. No animation library needed.</div>
+      </div>
+      <div class="tech-item reveal reveal-delay-1">
+        <div class="tech-icon">⚡</div>
+        <div class="tech-name">Vanilla JavaScript</div>
+        <div class="tech-desc">All betting logic, chip management, payout calculations, and session state handled in native JS.</div>
+      </div>
+      <div class="tech-item reveal reveal-delay-2">
+        <div class="tech-icon">🔗</div>
+        <div class="tech-name">PeerJS (WebRTC)</div>
+        <div class="tech-desc">Peer-to-peer real-time synchronization between host and all players — no backend server required.</div>
+      </div>
+      <div class="tech-item reveal">
+        <div class="tech-icon">📐</div>
+        <div class="tech-name">Figma</div>
+        <div class="tech-desc">Full design system created in Figma — components, variants, auto-layout, and prototype flows before any code was written.</div>
+      </div>
+      <div class="tech-item reveal reveal-delay-1">
+        <div class="tech-icon">📱</div>
+        <div class="tech-name">CSS Grid + Flexbox</div>
+        <div class="tech-desc">Adaptive layouts using clamp(), grid-template-areas, and media breakpoints for seamless mobile-to-desktop scaling.</div>
+      </div>
+      <div class="tech-item reveal reveal-delay-2">
+        <div class="tech-icon">🏦</div>
+        <div class="tech-name">VS Code</div>
+        <div class="tech-desc">Single-file architecture — both host and player interfaces are fully self-contained HTML files, deployable anywhere instantly.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Learnings -->
+<section id="learnings">
+  <div class="section-inner">
+    <div class="section-label" data-num="07">Key Learnings</div>
+    <h2 class="section-heading reveal">What 3 months of<br><em>deep iteration</em> taught.</h2>
+
+    <div class="learnings-grid">
+      <div class="learning-card reveal">
+        <div class="learning-num">01</div>
+        <div class="learning-title">Design the edge states first</div>
+        <div class="learning-body">Locked bets, disconnected peers, zero-balance states — designing the error and empty states before the happy path saved hours of rework. The UI is stress-tested before it's styled.</div>
+      </div>
+      <div class="learning-card reveal reveal-delay-1">
+        <div class="learning-num">02</div>
+        <div class="learning-title">P2P sync changes your IA</div>
+        <div class="learning-body">When there's no server to arbitrate state, the host becomes the source of truth. Every UI decision — who controls what, in what order — had to reflect this P2P topology at the information architecture level.</div>
+      </div>
+      <div class="learning-card reveal reveal-delay-2">
+        <div class="learning-num">03</div>
+        <div class="learning-title">Luxury ≠ complexity</div>
+        <div class="learning-body">The cinematic casino aesthetic came from restraint — fewer colors, slower animations, generous spacing. Removing elements (not adding them) was consistently the move that elevated the feel from "game" to "experience."</div>
+      </div>
+      <div class="learning-card reveal">
+        <div class="learning-num">04</div>
+        <div class="learning-title">Build for the worst device</div>
+        <div class="learning-body">Testing on a low-end Android with a 5-inch screen exposed chip tap-target failures early. Designing for the worst case meant the premium experience was already solved on every device above that baseline.</div>
+      </div>
+      <div class="learning-card reveal reveal-delay-1">
+        <div class="learning-num">05</div>
+        <div class="learning-title">Code literacy shapes design</div>
+        <div class="learning-body">Knowing CSS animation timing functions let me design the wheel deceleration curve in Figma with realistic physics — because I understood what was buildable before I drew it.</div>
+      </div>
+      <div class="learning-card reveal reveal-delay-2">
+        <div class="learning-num">06</div>
+        <div class="learning-title">Feedback loops must be instant</div>
+        <div class="learning-body">A 200ms delay on chip placement felt like a glitch. A 100ms felt snappy. Designing micro-response timing — not just visual states — is a craft in itself that high-fidelity prototypes can't capture; it needs production code.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-eyebrow">Danush Yadav · BCA Graduate · Chennai</div>
+  <h2 class="cta-heading">Designed & <em>built</em><br>end to end.</h2>
+  <p class="cta-sub">Ready for an entry-level UI/UX or frontend role where design meets code.</p>
+  <div class="cta-buttons">
+    <a href="mailto:danushyadav06@gmail.com" class="cta-btn primary">
+      ✉ Get in Touch
+    </a>
+    <a href="https://linkedin.com/in/danush-yadav-n-9500a6373" target="_blank" class="cta-btn secondary">
+      LinkedIn Profile →
+    </a>
+  </div>
+
+  <div class="footer-credits">
+    <span>DANUSH YADAV · N</span>
+    <span>ROYAL ROULETTE CASE STUDY · 2026</span>
+    <span>CHENNAI, INDIA</span>
+  </div>
+</section>
+
+<script>
+// Cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+  setTimeout(() => {
+    ring.style.left = e.clientX + 'px';
+    ring.style.top = e.clientY + 'px';
+  }, 60);
+});
+document.querySelectorAll('a,button,.demo-chip,.persona-card,.learning-card,.tech-item').forEach(el => {
+  el.addEventListener('mouseenter', () => ring.style.transform = 'translate(-50%,-50%) scale(1.8)');
+  el.addEventListener('mouseleave', () => ring.style.transform = 'translate(-50%,-50%) scale(1)');
+});
+
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1 });
+reveals.forEach(el => io.observe(el));
+
+// Chip selection
+function selectChip(wrap) {
+  document.querySelectorAll('#chipShowcase .demo-chip').forEach(c => c.classList.remove('s'));
+  wrap.querySelector('.demo-chip').classList.add('s');
+}
+
+// Nav highlight
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  const sections = document.querySelectorAll('section[id]');
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 120) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#' + current
+      ? 'var(--gold)' : '';
+  });
+});
+</script>
+</body>
+</html>
